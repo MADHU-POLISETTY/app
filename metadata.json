@@ -1,0 +1,6 @@
+{
+  "name": "PrepWise AI",
+  "description": "AI-powered technical interview preparation, evaluation, resume analysis, and automated testing platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

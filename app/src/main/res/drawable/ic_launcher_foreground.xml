@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="22"
+        android:translateY="22">
+        <!-- Graduation Cap Top -->
+        <path
+            android:fillColor="#3B82F6"
+            android:pathData="M32,10 L60,24 L32,38 L4,24 Z" />
+        <!-- Graduation Cap Base -->
+        <path
+            android:fillColor="#60A5FA"
+            android:pathData="M16,31 L16,42 C16,48 48,48 48,42 L48,31 C43,35 21,35 16,31 Z" />
+        <!-- Tassel -->
+        <path
+            android:fillColor="#06B6D4"
+            android:pathData="M52,24 L56,36 L54,48 L58,48 L56,36 Z" />
+        <!-- AI Star Sparkle -->
+        <path
+            android:fillColor="#A78BFA"
+            android:pathData="M32,46 L34,51 L39,53 L34,55 L32,60 L30,55 L25,53 L30,51 Z" />
+    </group>
+</vector>
