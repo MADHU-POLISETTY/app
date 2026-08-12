@@ -18,6 +18,7 @@ object ScreenRoutes {
     const val INTERVIEW_HISTORY = "interview_history"
     const val NOTIFICATIONS = "notifications"
     const val PROFILE = "profile"
+    const val TEST_INSIGHTS = "test_insights"
 
     fun buildQuestionDetailRoute(id: String) = "question_detail/$id"
 }

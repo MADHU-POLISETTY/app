@@ -201,6 +201,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onNavigateToProfile = {
                                 navController.navigate(ScreenRoutes.PROFILE)
+                            },
+                            onNavigateToTestInsights = {
+                                navController.navigate(ScreenRoutes.TEST_INSIGHTS)
                             }
                         )
                     }
@@ -317,6 +320,12 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable(ScreenRoutes.TEST_INSIGHTS) {
+                        DeveloperInsightsScreen(
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
