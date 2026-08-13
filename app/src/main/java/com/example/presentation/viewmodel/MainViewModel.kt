@@ -20,8 +20,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _userCredentials = MutableStateFlow<Map<String, String>>(
         mapOf(
-            "p.jmanoj378@gmail.com" to "Password123!",
-            "alex.morgan@university.edu" to "Password123!"
+            "user@example.com" to "Password123!",
+            "candidate@university.edu" to "Password123!"
         )
     )
     val userCredentials: StateFlow<Map<String, String>> = _userCredentials.asStateFlow()
@@ -138,12 +138,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (authenticate(email, pass)) {
             _isLoggedIn.value = true
             val cleanEmail = email.trim().lowercase()
-            val derivedName = when {
-                cleanEmail.contains("manoj") -> "Manoj P J"
-                cleanEmail.contains("alex") -> "Alex Morgan"
-                else -> cleanEmail.substringBefore("@").replace(".", " ").replace("_", " ").split(" ")
-                    .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
-            }
+            val derivedName = cleanEmail.substringBefore("@")
+                .replace(".", " ")
+                .replace("_", " ")
+                .split(" ")
+                .filter { it.isNotBlank() }
+                .joinToString(" ") { word ->
+                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                }.ifBlank { "Candidate User" }
             viewModelScope.launch {
                 val current = userProfile.value
                 repository.saveUserProfile(
@@ -173,11 +175,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             graduationYear = gradYear,
             primarySkill = primarySkill,
             experienceLevel = "Intermediate",
-            overallScore = 80,
-            questionsAttempted = 1,
-            averageScore = 80,
-            currentStreak = 1,
-            readinessPercentage = 85
+            overallScore = 0,
+            questionsAttempted = 0,
+            averageScore = 0,
+            currentStreak = 0,
+            readinessPercentage = 0
         )
         viewModelScope.launch {
             repository.saveUserProfile(updated)

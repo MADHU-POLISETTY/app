@@ -24,6 +24,9 @@ interface InterviewResultDao {
     @Query("SELECT * FROM interview_results ORDER BY id DESC")
     fun getAllResults(): Flow<List<InterviewResultEntity>>
 
+    @Query("SELECT * FROM interview_results ORDER BY id DESC")
+    suspend fun getResultsList(): List<InterviewResultEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertResult(result: InterviewResultEntity)
 }
@@ -41,6 +44,9 @@ interface ResumeAnalysisDao {
 interface UserProfileDao {
     @Query("SELECT * FROM user_profile LIMIT 1")
     fun getUserProfile(): Flow<UserProfileEntity?>
+
+    @Query("SELECT * FROM user_profile LIMIT 1")
+    suspend fun getSingleProfile(): UserProfileEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateProfile(profile: UserProfileEntity)

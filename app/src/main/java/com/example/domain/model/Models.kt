@@ -82,18 +82,19 @@ data class ResumeAnalysisResult(
 )
 
 data class UserProfile(
-    val fullName: String = "Manoj P J",
-    val email: String = "p.jmanoj378@gmail.com",
-    val college: String = "Institute of Technology",
-    val degree: String = "B.Tech Computer Science",
+    val fullName: String = "Candidate User",
+    val email: String = "candidate@example.com",
+    val college: String = "University Name",
+    val degree: String = "B.S. Computer Science",
     val graduationYear: String = "2026",
-    val primarySkill: String = "AWS & Cloud Systems",
+    val primarySkill: String = "Software Engineering",
     val experienceLevel: String = "Intermediate",
-    val overallScore: Int = 84,
-    val questionsAttempted: Int = 142,
-    val averageScore: Int = 81,
-    val currentStreak: Int = 7,
-    val readinessPercentage: Int = 88
+    val joinDate: String = "2026",
+    val overallScore: Int = 0,
+    val questionsAttempted: Int = 0,
+    val averageScore: Int = 0,
+    val currentStreak: Int = 0,
+    val readinessPercentage: Int = 0
 )
 
 data class NotificationItem(

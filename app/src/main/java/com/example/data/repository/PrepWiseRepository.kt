@@ -9,6 +9,7 @@ import com.example.data.local.entity.UserProfileEntity
 import com.example.data.remote.GeminiService
 import com.example.domain.model.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class PrepWiseRepository(context: Context) {
@@ -27,30 +28,45 @@ class PrepWiseRepository(context: Context) {
     }
 
     val interviewResults: Flow<List<InterviewSession>> = resultDao.getAllResults().map { list ->
-        if (list.isEmpty()) {
-            getSampleInterviewResults()
-        } else {
-            list.map {
-                InterviewSession(
-                    id = it.id,
-                    title = it.title,
-                    category = it.category,
-                    scorePercentage = it.scorePercentage,
-                    date = it.date,
-                    totalQuestions = it.totalQuestions,
-                    durationMinutes = it.durationMinutes,
-                    detailedFeedback = it.detailedFeedback
-                )
-            }
+        list.map {
+            InterviewSession(
+                id = it.id,
+                title = it.title,
+                category = it.category,
+                scorePercentage = it.scorePercentage,
+                date = it.date,
+                totalQuestions = it.totalQuestions,
+                durationMinutes = it.durationMinutes,
+                detailedFeedback = it.detailedFeedback
+            )
         }
     }
 
-    val userProfile: Flow<UserProfile> = userProfileDao.getUserProfile().map { entity ->
-        entity?.toDomain() ?: UserProfile()
+    val userProfile: Flow<UserProfile> = combine(
+        userProfileDao.getUserProfile(),
+        resultDao.getAllResults()
+    ) { profileEntity, resultsList ->
+        val baseProfile = profileEntity?.toDomain() ?: UserProfile()
+        if (resultsList.isEmpty()) {
+            baseProfile
+        } else {
+            val totalQuestions = resultsList.sumOf { it.totalQuestions }
+            val avgScore = resultsList.map { it.scorePercentage }.average().toInt()
+            val readiness = (avgScore * 0.85 + (resultsList.size * 3).coerceAtMost(15)).toInt().coerceIn(0, 100)
+            val streak = resultsList.size.coerceAtLeast(1)
+            baseProfile.copy(
+                questionsAttempted = totalQuestions,
+                averageScore = avgScore,
+                overallScore = avgScore,
+                readinessPercentage = readiness,
+                currentStreak = streak
+            )
+        }
     }
 
     suspend fun saveUserProfile(profile: UserProfile) {
         userProfileDao.insertOrUpdateProfile(profile.toEntity())
+        com.example.data.remote.FirebaseService.saveUserProfileToFirestore(profile)
     }
 
     suspend fun evaluateAnswer(questionTitle: String, questionPrompt: String, answer: String): AnswerEvaluation {
@@ -84,6 +100,28 @@ class PrepWiseRepository(context: Context) {
                 detailedFeedback = session.detailedFeedback
             )
         )
+        com.example.data.remote.FirebaseService.saveInterviewResultToFirestore(session)
+
+        // Calculate and update real performance summary based on actual test results
+        val existingEntity = userProfileDao.getSingleProfile()
+        val currentProfile = existingEntity?.toDomain() ?: UserProfile()
+        val allResults = resultDao.getResultsList()
+
+        val totalQuestions = allResults.sumOf { it.totalQuestions }
+        val avgScore = if (allResults.isNotEmpty()) allResults.map { it.scorePercentage }.average().toInt() else 0
+        val readiness = if (allResults.isNotEmpty()) (avgScore * 0.85 + (allResults.size * 3).coerceAtMost(15)).toInt().coerceIn(0, 100) else 0
+        val streak = allResults.size.coerceAtLeast(1)
+
+        val updatedProfile = currentProfile.copy(
+            questionsAttempted = totalQuestions,
+            averageScore = avgScore,
+            overallScore = avgScore,
+            readinessPercentage = readiness,
+            currentStreak = streak
+        )
+
+        userProfileDao.insertOrUpdateProfile(updatedProfile.toEntity())
+        com.example.data.remote.FirebaseService.saveUserProfileToFirestore(updatedProfile)
     }
 
     suspend fun seedInitialQuestionsIfEmpty() {
