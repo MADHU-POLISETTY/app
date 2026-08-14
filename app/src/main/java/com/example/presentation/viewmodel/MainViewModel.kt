@@ -130,34 +130,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Auth Actions
     fun authenticate(email: String, pass: String): Boolean {
         val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank() || pass.length < 4) return false
+
         val storedPass = _userCredentials.value[cleanEmail]
-        return storedPass != null && storedPass == pass
+        if (storedPass == null) {
+            _userCredentials.value = _userCredentials.value + (cleanEmail to pass)
+        } else if (storedPass != pass) {
+            return false
+        }
+
+        _isLoggedIn.value = true
+        val derivedName = cleanEmail.substringBefore("@")
+            .replace(".", " ")
+            .replace("_", " ")
+            .split(" ")
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word ->
+                word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }.ifBlank { "Candidate User" }
+
+        viewModelScope.launch {
+            val current = userProfile.value.copy(
+                fullName = if (userProfile.value.fullName.isBlank() || userProfile.value.fullName == "Candidate User") derivedName else userProfile.value.fullName,
+                email = email.trim()
+            )
+            repository.registerAndSaveUser(cleanEmail, pass, current)
+        }
+        return true
     }
 
     fun login(email: String, pass: String): Boolean {
-        if (authenticate(email, pass)) {
-            _isLoggedIn.value = true
-            val cleanEmail = email.trim().lowercase()
-            val derivedName = cleanEmail.substringBefore("@")
-                .replace(".", " ")
-                .replace("_", " ")
-                .split(" ")
-                .filter { it.isNotBlank() }
-                .joinToString(" ") { word ->
-                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-                }.ifBlank { "Candidate User" }
-            viewModelScope.launch {
-                val current = userProfile.value
-                repository.saveUserProfile(
-                    current.copy(
-                        fullName = derivedName,
-                        email = email.trim()
-                    )
-                )
-            }
-            return true
-        }
-        return false
+        return authenticate(email, pass)
     }
 
     fun logout() {
@@ -169,7 +172,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _userCredentials.value = _userCredentials.value + (cleanEmail to pass)
         val updated = UserProfile(
             fullName = name,
-            email = email,
+            email = email.trim(),
             college = college,
             degree = degree,
             graduationYear = gradYear,
@@ -182,7 +185,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             readinessPercentage = 0
         )
         viewModelScope.launch {
-            repository.saveUserProfile(updated)
+            repository.registerAndSaveUser(cleanEmail, pass, updated)
             _isLoggedIn.value = true
         }
     }

@@ -3,12 +3,17 @@ package com.example.data.remote
 import android.util.Log
 import com.example.domain.model.InterviewSession
 import com.example.domain.model.UserProfile
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 object FirebaseService {
     private const val TAG = "FirebaseService"
+    
+    private val auth: FirebaseAuth by lazy {
+        FirebaseAuth.getInstance()
+    }
     
     private val firestore: FirebaseFirestore by lazy {
         FirebaseFirestore.getInstance()
@@ -17,6 +22,31 @@ object FirebaseService {
     // Firestore Collections
     private const val COLLECTION_USERS = "user_profiles"
     private const val COLLECTION_RESULTS = "interview_results"
+
+    /**
+     * Registers or authenticates a user in Firebase Authentication so the account appears in Firebase Console Auth.
+     */
+    suspend fun registerOrAuthenticateWithFirebase(email: String, pass: String): String? {
+        val cleanEmail = email.trim()
+        if (cleanEmail.isEmpty() || pass.isEmpty()) return null
+        return try {
+            val authResult = auth.createUserWithEmailAndPassword(cleanEmail, pass).await()
+            val uid = authResult.user?.uid
+            Log.d(TAG, "Successfully registered user in Firebase Auth with UID: $uid")
+            uid
+        } catch (e: Exception) {
+            Log.w(TAG, "User registration in Firebase Auth encountered exception, attempting sign in: ${e.message}")
+            try {
+                val signInResult = auth.signInWithEmailAndPassword(cleanEmail, pass).await()
+                val uid = signInResult.user?.uid
+                Log.d(TAG, "Successfully signed in existing user in Firebase Auth with UID: $uid")
+                uid
+            } catch (e2: Exception) {
+                Log.e(TAG, "Failed Firebase Auth registration/signin for $cleanEmail: ${e2.message}")
+                null
+            }
+        }
+    }
 
     /**
      * Saves or updates candidate user profile directly in Google Firebase Firestore Cloud Database.
@@ -29,7 +59,10 @@ object FirebaseService {
             val formattedDate = sdfDate.format(now)
             val formattedTime = sdfTime.format(now)
 
+            val currentUid = auth.currentUser?.uid ?: ""
+
             val userMap = hashMapOf(
+                "uid" to currentUid,
                 "fullName" to userProfile.fullName,
                 "email" to userProfile.email,
                 "college" to userProfile.college,
@@ -47,10 +80,21 @@ object FirebaseService {
                 "lastSyncTime" to formattedTime,
                 "updatedAt" to System.currentTimeMillis()
             )
+
+            val documentKey = userProfile.email.trim().lowercase().replace(".", "_")
+
             firestore.collection(COLLECTION_USERS)
-                .document(userProfile.email.replace(".", "_"))
+                .document(documentKey)
                 .set(userMap, SetOptions.merge())
                 .await()
+
+            if (currentUid.isNotEmpty()) {
+                firestore.collection(COLLECTION_USERS)
+                    .document(currentUid)
+                    .set(userMap, SetOptions.merge())
+                    .await()
+            }
+
             Log.d(TAG, "Successfully saved user profile with performance stats to Firebase Firestore: ${userProfile.email}")
             true
         } catch (e: Exception) {

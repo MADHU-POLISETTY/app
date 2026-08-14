@@ -64,6 +64,12 @@ class PrepWiseRepository(context: Context) {
         }
     }
 
+    suspend fun registerAndSaveUser(email: String, pass: String, profile: UserProfile) {
+        userProfileDao.insertOrUpdateProfile(profile.toEntity())
+        com.example.data.remote.FirebaseService.registerOrAuthenticateWithFirebase(email, pass)
+        com.example.data.remote.FirebaseService.saveUserProfileToFirestore(profile)
+    }
+
     suspend fun saveUserProfile(profile: UserProfile) {
         userProfileDao.insertOrUpdateProfile(profile.toEntity())
         com.example.data.remote.FirebaseService.saveUserProfileToFirestore(profile)
