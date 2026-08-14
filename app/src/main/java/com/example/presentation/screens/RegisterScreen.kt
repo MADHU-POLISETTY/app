@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -26,6 +27,9 @@ fun RegisterScreen(
     var fullName by remember { mutableStateOf("Alex Morgan") }
     var email by remember { mutableStateOf("alex.morgan@university.edu") }
     var password by remember { mutableStateOf("Password123!") }
+    var confirmPassword by remember { mutableStateOf("Password123!") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
     var college by remember { mutableStateOf("Institute of Technology") }
     var degree by remember { mutableStateOf("B.Tech Computer Science") }
     var gradYear by remember { mutableStateOf("2026") }
@@ -100,12 +104,58 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { 
+                    password = it
+                    if (confirmPassword.isNotEmpty() && it != confirmPassword) {
+                        errorMessage = "Passwords do not match"
+                    } else if (errorMessage == "Passwords do not match") {
+                        errorMessage = ""
+                    }
+                },
                 label = { Text("Password") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                visualTransformation = PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(
+                            if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().testTag("register_password_input")
+            )
+
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { 
+                    confirmPassword = it
+                    if (password.isNotEmpty() && it != password) {
+                        errorMessage = "Passwords do not match"
+                    } else if (errorMessage == "Passwords do not match") {
+                        errorMessage = ""
+                    }
+                },
+                label = { Text("Confirm Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }) {
+                        Icon(
+                            if (isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isConfirmPasswordVisible) "Hide confirm password" else "Show confirm password"
+                        )
+                    }
+                },
+                visualTransformation = if (isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                singleLine = true,
+                isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+                supportingText = {
+                    if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                        Text("Passwords do not match", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().testTag("register_confirm_password_input")
             )
 
             OutlinedTextField(
@@ -148,11 +198,16 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    if (fullName.isBlank() || email.isBlank() || password.length < 6) {
-                        errorMessage = "Please enter all required fields with password >= 6 characters"
+                    if (fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                        errorMessage = "Please fill in all required fields"
                     } else if (!email.contains("@") || !email.contains(".")) {
                         errorMessage = "Please enter a valid email address"
+                    } else if (password.length < 6) {
+                        errorMessage = "Password must be at least 6 characters"
+                    } else if (password != confirmPassword) {
+                        errorMessage = "Passwords do not match. Please re-enter."
                     } else {
+                        errorMessage = ""
                         onRegisterSuccess(fullName, email, password, college, degree, gradYear, primarySkill)
                     }
                 },
