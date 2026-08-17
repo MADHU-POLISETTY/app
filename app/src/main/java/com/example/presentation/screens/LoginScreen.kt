@@ -21,6 +21,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import { auth, db } from "./firebaseConfig";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
